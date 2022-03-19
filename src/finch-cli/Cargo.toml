@@ -1,0 +1,14 @@
+[package]
+name = "finch-cli"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+finch-server = { path = "../finch-server" }
+
+clap = { version = "3.1.6", features = [ "derive" ] }
+color-eyre = "0.6.1"
+confy = { git = "https://github.com/rust-cli/confy/" }
+tokio = { version = "1.17.0", features = ["full"] }
+tracing = "0.1.32"
+tracing-subscriber = "0.3.9"
