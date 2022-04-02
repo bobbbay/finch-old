@@ -2,8 +2,11 @@ use std::env::current_dir;
 use std::ffi::OsString;
 use std::path::PathBuf;
 use clap::{Parser, Subcommand, Args};
+use color_eyre::eyre::eyre;
 use tracing::trace;
-use color_eyre::Result;
+use color_eyre::{Result, Section};
+use confy::ConfyError;
+use finch_server::config::Config;
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None, propagate_version = true)]
@@ -24,8 +27,6 @@ enum Commands {
 struct Run {
     /// The path to start the server in.
     path: Option<PathBuf>,
-    /// The config variation to use.
-    config_variant: Option<String>,
     /// Override with a custom config file.
     config_file: Option<PathBuf>,
 }
@@ -47,20 +48,28 @@ pub async fn main() -> Result<()> {
 
     match &cli.command {
         Commands::Run(runnable) => {
-            let (cfg, file_name): (finch_server::config::Config, OsString) = if let Some(path) = &runnable.config_file {
-                (confy::load_path(path)?, path.as_os_str().to_owned())
+            let (cfg, file_name): (Result<Config, ConfyError>, OsString) = if let Some(path) = &runnable.config_file {
+                (confy::load_path(path), path.as_os_str().to_owned())
             } else {
-                let variant = runnable.config_variant.as_deref();
-                let cfg = confy::load("finch", variant)?;
-                let file_name = confy::get_configuration_file_path("finch", variant)?.as_os_str().to_owned();
+                let cfg = confy::load("finch", None);
+                let file_name = confy::get_configuration_file_path("finch", None)?.as_os_str().to_owned();
                 (cfg, file_name)
             };
 
-            trace!("Loaded configuration {}", file_name.into_string().unwrap_or("".to_string()));
+            let file_name = file_name.into_string().unwrap_or("".to_string());
+            let cfg = cfg.map_err(|e| eyre!("Failed to load configuration")
+                .with_error(|| e)
+                .with_note(|| "Looking for the configuration file: ".to_owned() + &file_name.clone()))
+                .with_suggestion(|| "Run with --help to see the options for specifying a configuration file.")
+                .with_suggestion(|| "Ensure the file exists.")
+                .with_suggestion(|| "Ensure the TOML values are valid.");
 
-            finch_server::start(current_dir()?, cfg).await?;
+            trace!("Loaded configuration {}", &file_name);
+
+            finch_server::start(current_dir()?, cfg?).await?;
         }
     }
 
     Ok(())
 }
+

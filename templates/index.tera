@@ -1,5 +1,7 @@
 {% extends "layout.tera" %} {% block content %}
 <div class="container">
 Hello, Tera!
+
+Here is the current context: {{ __tera_context }}
 </div>
 {% endblock content %}
