@@ -1,5 +1,5 @@
 use sea_orm::prelude::*;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize)]
 #[sea_orm(table_name = "users")]
@@ -17,7 +17,11 @@ pub struct Model {
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
-    #[sea_orm(belongs_to = "super::team::Entity", from = "Column::TeamNumber", to = "super::team::Column::Number")]
+    #[sea_orm(
+        belongs_to = "super::team::Entity",
+        from = "Column::TeamNumber",
+        to = "super::team::Column::Number"
+    )]
     Team,
 }
 

@@ -1,26 +1,26 @@
 #![forbid(unsafe_code)]
 
+mod api;
 pub mod config;
 mod error;
-mod api;
 
-use std::net::SocketAddr;
-use std::path::PathBuf;
-use axum::{Router, Server};
+use crate::api::list_teams;
+use crate::config::Config;
+use crate::error::HtmlResult;
 use axum::error_handling::HandleErrorLayer;
 use axum::extract::Extension;
 use axum::http::StatusCode;
 use axum::response::Html;
 use axum::routing::{get, get_service};
+use axum::{Router, Server};
 use finch_entities::sea_orm::{Database, DatabaseConnection};
+use migration::{Migrator, MigratorTrait};
+use std::net::SocketAddr;
+use std::path::PathBuf;
 use tera::Tera;
 use tower::ServiceBuilder;
 use tower_http::services::ServeDir;
 use tracing::{info, instrument, trace};
-use migration::{Migrator, MigratorTrait};
-use crate::config::Config;
-use crate::error::HtmlResult;
-use crate::api::list_teams;
 
 /// Given a root directory, create a `PathBuf` to the templates directory.
 fn template_dir(dir: &PathBuf) -> PathBuf {
@@ -51,24 +51,25 @@ pub async fn start(dir: PathBuf, config: Config) -> color_eyre::Result<()> {
         .route("/api/list_teams", get(list_teams))
         .nest(
             "/static",
-            get_service(ServeDir::new(static_dir(&dir).to_str().unwrap_or("")))
-                .handle_error(|error: std::io::Error| async move {
+            get_service(ServeDir::new(static_dir(&dir).to_str().unwrap_or(""))).handle_error(
+                |error: std::io::Error| async move {
                     (
                         StatusCode::INTERNAL_SERVER_ERROR,
                         format!("Static service error: {}", error),
                     )
-                }),
+                },
+            ),
         )
-        .layer(ServiceBuilder::new()
-            .layer(Extension(conn))
-            .layer(Extension(templates)));
+        .layer(
+            ServiceBuilder::new()
+                .layer(Extension(conn))
+                .layer(Extension(templates)),
+        );
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
     info!("Listening at: {}", addr);
 
-    Server::bind(&addr)
-        .serve(app.into_make_service())
-        .await?;
+    Server::bind(&addr).serve(app.into_make_service()).await?;
 
     Ok(())
 }

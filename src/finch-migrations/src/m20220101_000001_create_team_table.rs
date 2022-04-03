@@ -1,6 +1,6 @@
+use crate::sea_orm::tests_cfg::cake_expanded::Column;
 use entity::team::*;
 use sea_schema::migration::prelude::*;
-use crate::sea_orm::tests_cfg::cake_expanded::Column;
 
 pub struct Migration;
 

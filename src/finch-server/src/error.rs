@@ -1,12 +1,12 @@
-use axum::BoxError;
+use crate::StatusCode;
 use axum::handler::Handler;
 use axum::http::Request;
 use axum::response::{Html, IntoResponse, Response};
-use tera::{Context, Tera};
-use tracing::error;
+use axum::BoxError;
 use finch_entities::sea_orm::DbErr;
+use tera::{Context, Tera};
 use thiserror::Error;
-use crate::StatusCode;
+use tracing::error;
 
 pub type Result<T> = std::result::Result<T, Error>;
 
@@ -23,7 +23,8 @@ impl IntoResponse for Error {
         ctx.insert("message", &self.msg);
         ctx.insert("code", &self.code.as_str());
 
-        let body = Tera::one_off("\
+        let body = Tera::one_off(
+            "\
     <link
       href=\"//fonts.googleapis.com/css?family=Raleway:400,300,600\"
                                  rel=\"stylesheet\"
@@ -37,7 +38,11 @@ Uh oh! An error ocurred. Please report this to the system administrator.
 <pre>{{ code }}</pre>
 <pre>{{ message }}</pre>
 </div>
-        ", &ctx, true).expect("Could not create error template while handling another error.");
+        ",
+            &ctx,
+            true,
+        )
+        .expect("Could not create error template while handling another error.");
 
         Html(body).into_response()
     }
