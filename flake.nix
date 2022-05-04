@@ -1,9 +1,6 @@
 {
-  inputs.utils.url = "github:numtide/flake-utils";
-
-  outputs = { self, nixpkgs, utils} @ inputs: utils.lib.simpleFlake {
-    inherit self nixpkgs;
-    name = "finch";
-    shell = ./shell.nix;
+  inputs = {
+    nci.url = "github:yusdacra/nix-cargo-integration";
   };
+  outputs = inputs: inputs.nci.lib.makeOutputs { root = ./.; };
 }

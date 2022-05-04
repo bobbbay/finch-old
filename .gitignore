@@ -1,3 +1,9 @@
+# Rust
 /target
 
-/.idea
+# Nix and direnv
+target/
+.direnv/
+
+.vscode/
+.idea/
